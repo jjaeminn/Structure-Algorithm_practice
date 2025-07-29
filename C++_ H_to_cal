@@ -1,0 +1,377 @@
+#include <iostream> 
+#include <limits>   
+#include <string>   
+#include <cstdlib>  
+#include <cstring> 
+
+#define STACK_BASE 10
+#define MAX_TOKENS 50
+#define MAX_TOKEN_LENGTH 20
+#define MAX_EXPRESSION_LENGTH 100
+using namespace std;
+
+// 일단 주요 기능은 직접 짯고 범위 빠진 예외처리 정도만 구글링으로 찾음 
+
+
+// 주요 stack에서 일어나는 함수들 모음 
+class stack {
+private:
+    int top;
+    int capacity;
+    int* arr;
+
+public:
+    // 생성자: 스택의 초기 크기를 설정하고 메모리를 할당합니다.
+    // initialSize가 0 이하이면 기본값 10으로 설정합니다.
+    stack(int initialSize = STACK_BASE) { // 기본값 STACK_BASE에서 수정 가능 
+        if (initialSize <= 0) {
+            cout << "오류: 스택 크기는 0보다 커야 합니다. 기본값 10으로 설정합니다." << endl;
+            capacity = 10;
+        }
+        else {
+            capacity = initialSize;
+        }
+        arr = new int[capacity];
+        top = -1;
+    }
+
+    // 소멸자: 할당된 메모리를 해제합니다.
+    ~stack() {
+        delete[] arr;
+        arr = nullptr;
+    }
+
+    // Push: 스택에 데이터를 추가합니다.
+    void Push(int data) {
+        if (top == capacity - 1) {
+            // cout << "오류: 스택이 가득 찼습니다. (" << data << "를 넣을 수 없습니다.)" << endl;
+            return;
+        }
+        top++; // 값의 상위값을 추척 
+        arr[top] = data; // 데이터를 배열에 저장 
+        // cout << data << "를 스택에 넣었습니다. (현재 top: " << top << ")" << endl;
+    }
+
+    // Pop: 스택에서 데이터를 제거하고 반환합니다.
+    int Pop() {
+        if (top == -1) {
+            // cout << "오류: 스택이 비어있습니다. 뺄 값이 없습니다." << endl;
+            return numeric_limits<int>::min(); // 스택이 비어있을 때 오류 값 반환
+        }
+        int popped_value = arr[top];
+        top--; // 제거되니까 한 단계 -1 
+        // cout << popped_value << " 값을 스택에서 뺐습니다. (현재 top: " << top << ")" << endl;
+        return popped_value;
+    }
+
+    // isEmpty: 스택이 비어있는지 확인합니다.
+    bool isEmpty() const { 
+        return top == -1;
+    }
+
+    // isFull: 스택이 가득 찼는지 확인합니다.
+    bool isFull() const {
+        return top == capacity - 1;
+    }
+
+    // peek: 스택의 최상단 값을 확인합니다 (제거하지 않음).
+    int peek() const {
+        if (top == -1) {
+            // cout << "오류: 스택이 비어있습니다. 최상단 값을 가져올 수 없습니다." << endl;
+            return std::numeric_limits<int>::min(); // 스택이 비어있을 때 오류 값 반환
+        }
+        return arr[top];
+    }
+}; 
+
+// 문자가 숫자인지 확인하는 헬퍼 함수
+bool isDigitCustom(char ch) {
+    return (ch >= '0' && ch <= '9');
+}
+
+// 문자가 연산자 또는 괄호인지 확인하는 헬퍼 함수
+bool isOperatorOrParenthesis(char ch) {
+    return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '(' || ch == ')');
+}
+
+// 연산자의 우선순위를 반환하는 함수
+// 숫자가 높을수록 우선순위가 높습니다.
+int getOperatorPrecedence(char op) {
+    if (op == '+' || op == '-') { // 우선순위를 정수로 리턴해서 나중에 비교 할 때 정수로 순위 결정 
+        return 1;
+    }
+    if (op == '*' || op == '/') {
+        return 2;
+    }
+    return 0; // 괄호나 다른 문자 (최하위 우선순위)
+}
+
+// op1이 op2보다 우선순위가 높거나 같으면 true를 반환
+bool hasHigherPrecedence(char op1, char op2) {
+    return getOperatorPrecedence(op1) >= getOperatorPrecedence(op2);
+}
+
+// 값들 토큰화 
+int tokenizeExpressionNoLib(const char* expression, char tokenArray[MAX_TOKENS][MAX_TOKEN_LENGTH]) { // 문자열의 1번째 값과, 저장할 2차원 배열을 받는다. 
+    int tokenCount = 0;
+    int exprIndex = 0; // 현재 수식 문자열의 인덱스
+
+    while (expression[exprIndex] != '\0') { // 문자열 끝까지 순회
+        // 1. 공백 무시
+        if (expression[exprIndex] == ' ' || expression[exprIndex] == '\t' || expression[exprIndex] == '\n') {
+            exprIndex++; // tokencount는 안하지만 그래도 수식 문자열은++ 
+            continue;
+        }
+
+        // 2. 연산자 또는 괄호 처리
+        if (isOperatorOrParenthesis(expression[exprIndex])) {
+            if (tokenCount >= MAX_TOKENS) {
+                cout << "오류: 토큰 배열이 가득 찼습니다." << endl;
+                return -1;
+            }
+            tokenArray[tokenCount][0] = expression[exprIndex]; // [0~N][0]은 연산자를 놓기 
+            tokenArray[tokenCount][1] = '\0'; // 널 종료 문자 추가 [0~N][1]을 놓어서 [0~N][0]이 다 순회하면 자동으로 '\0' 값 반환으로 종료 
+            tokenCount++;
+            exprIndex++;
+            continue;
+        }
+
+        // 3. 숫자 (정수 또는 실수) 처리
+        if (isDigitCustom(expression[exprIndex])) {
+            if (tokenCount >= MAX_TOKENS) {
+                cout << "오류: 토큰 배열이 가득 찼습니다." << endl;
+                return -1;
+            }
+            int tokenCharIndex = 0;
+            bool hasDecimal = false;
+
+            // 숫자가 아닐 때까지 또는 문자열 끝까지 읽기
+            while (expression[exprIndex] != '\0' && (isDigitCustom(expression[exprIndex]) || expression[exprIndex] == '.')) {
+                if (tokenCharIndex >= MAX_TOKEN_LENGTH - 1) { // 토큰 길이 초과 방지
+                    cout << "오류: 토큰 길이가 너무 깁니다." << endl;
+                    return -1;
+                }
+                if (expression[exprIndex] == '.') {
+                    if (hasDecimal) {
+                        cout << "오류: 잘못된 숫자 형식 (소수점 중복)." << endl;
+                        return -1;
+                    }
+                    hasDecimal = true;
+                }
+                tokenArray[tokenCount][tokenCharIndex] = expression[exprIndex];
+                tokenCharIndex++;
+                exprIndex++;
+            }
+            tokenArray[tokenCount][tokenCharIndex] = '\0'; // 널 종료 문자 추가
+            tokenCount++;
+            continue;
+        }
+
+        // 4. 알 수 없는 문자 처리 (오류)
+        cout << "오류: 알 수 없는 문자 발견 - '" << expression[exprIndex] << "'" << endl;
+        return -1;
+    }
+
+    return tokenCount;
+}
+
+// 중위 표기식 토큰을 후위 표기식 토큰으로 변환하는 함수 
+// tokenArray: 중위 표기식 토큰 배열
+// numTokens: 중위 표기식 토큰의 개수
+// postfixTokens: 변환된 후위 표기식 토큰이 저장될 배열 (출력 매개변수)
+// 반환 값: 후위 표기식 토큰의 개수, 오류 시 -1
+// 즉 infix -> Postfix로 재정리
+int infixToPostfix(char tokenArray[MAX_TOKENS][MAX_TOKEN_LENGTH], int numTokens, char postfixTokens[MAX_TOKENS][MAX_TOKEN_LENGTH]) {
+    stack operatorStack(MAX_TOKENS); // 연산자를 위한 스택
+    int postfixCount = 0;
+
+    for (int i = 0; i < numTokens; ++i) {
+        char* token = tokenArray[i];
+
+        // 1. 숫자인 경우: 바로 후위 표기식으로 출력
+        // strtod를 사용하여 숫자인지 가장 정확하게 판별
+        char* endPtr;
+        strtod(token, &endPtr); // 변환 시도 (값은 사용하지 않고 숫자 여부만 판단)
+
+        // endPtr이 널 문자를 가리키고, 토큰이 비어있지 않으면 유효한 숫자
+        if (endPtr[0] == '\0' && strlen(token) > 0) {
+            if (postfixCount >= MAX_TOKENS) return -1; // 배열 오버플로우
+            strcpy_s(postfixTokens[postfixCount], token); // 들어있는 거 읽기 
+            postfixCount++;
+        }
+        // 2. 여는 괄호인 경우: 스택에 푸시
+        else if (token[0] == '(' && strlen(token) == 1) { // 우선순위 2번째 or '(' 
+            operatorStack.Push('(');
+        }
+        // 3. 닫는 괄호인 경우: 여는 괄호가 나올 때까지 스택에서 팝하여 후위 표기식으로 추가
+        else if (token[0] == ')' && strlen(token) == 1) {
+            while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
+                if (postfixCount >= MAX_TOKENS) return -1;
+                postfixTokens[postfixCount][0] = static_cast<char>(operatorStack.Pop()); 
+                postfixTokens[postfixCount][1] = '\0';
+                postfixCount++;
+            }
+            if (!operatorStack.isEmpty() && operatorStack.peek() == '(') { // 괄호 나오면 팝하여 버림 
+                operatorStack.Pop(); // 여는 괄호 '(' 팝하여 버림
+            }
+            else {
+                cout << "오류: 괄호 불일치 - 닫는 괄호에 짝이 없습니다." << endl;
+                return -1; // 괄호 불일치 오류
+            }
+        }
+        // 4. 연산자인 경우:
+        else if (isOperatorOrParenthesis(token[0]) && strlen(token) == 1) {
+            while (!operatorStack.isEmpty() && operatorStack.peek() != '(' && hasHigherPrecedence(static_cast<char>(operatorStack.peek()), token[0])) { // 안비어있고, 상위에 '(' 없고, 연산자가 현재 연산자보다 우선순위가 높으면 
+                if (postfixCount >= MAX_TOKENS) return -1;
+                postfixTokens[postfixCount][0] = static_cast<char>(operatorStack.Pop()); // 그걸 Poo해서 
+                postfixTokens[postfixCount][1] = '\0';
+                postfixCount++;
+            }
+            operatorStack.Push(token[0]); // 우선순위에 따라 쭉 올라가거나 내려감 
+        }
+        // 5. 알 수 없는 토큰
+        else {
+            cout << "오류: infixToPostfix - 알 수 없는 토큰 '" << token << "'" << endl;
+            return -1;
+        }
+    }
+
+    // 스택에 남아있는 모든 연산자를 후위 표기식으로 추가
+    while (!operatorStack.isEmpty()) {
+        if (operatorStack.peek() == '(' || operatorStack.peek() == ')') {
+            cout << "오류: 괄호 불일치 - 여는 괄호가 짝이 없습니다." << endl;
+            return -1; // 괄호 불일치 오류
+        }
+        if (postfixCount >= MAX_TOKENS) return -1;
+        postfixTokens[postfixCount][0] = static_cast<char>(operatorStack.Pop());
+        postfixTokens[postfixCount][1] = '\0';
+        postfixCount++;
+    }
+
+    return postfixCount;
+}
+
+// 후위 표기식을 계산하는 함수
+// postfixTokens: 후위 표기식 토큰 배열
+// numPostfixTokens: 후위 표기식 토큰의 개수
+// 반환 값: 계산 결과 (double), 오류 시 numeric_limits<double>quiet_NaN() 등 반환
+// 즉 계산
+double evaluatePostfix(char postfixTokens[MAX_TOKENS][MAX_TOKEN_LENGTH], int numPostfixTokens) {
+    stack operandStack(MAX_TOKENS); // 피연산자(숫자)를 위한 스택
+
+    for (int i = 0; i < numPostfixTokens; ++i) {
+        char* token = postfixTokens[i];
+
+        // 1. 숫자인 경우: 스택에 푸시
+        char* endPtr;
+        double value = strtod(token, &endPtr); // 문자열을 double로 변환 시도
+
+        // 변환 성공 (endPtr이 널 문자 '\0'를 가리키면 전체 문자열이 숫자로 변환됨)
+        // 그리고 token이 비어있지 않은지도 확인
+        if (endPtr[0] == '\0' && strlen(token) > 0) {
+            // stack 클래스가 int만 저장하므로, double을 int로 변환하여 푸시합니다.
+            // **주의: 정밀도 손실이 발생할 수 있습니다!**
+            // 실제로는 double을 저장할 수 있는 스택을 새로 만드는 것이 좋습니다.
+            operandStack.Push(static_cast<int>(value));
+        }
+        // 2. 연산자인 경우: 스택에서 두 개의 피연산자를 팝하여 계산 후 결과 푸시
+        else if (isOperatorOrParenthesis(token[0]) && strlen(token) == 1) { // 한 글자 연산자인지 확인
+            if (operandStack.isEmpty()) {
+                cout << "오류: 후위 표기식 계산 - 연산자에 필요한 피연산자가 부족합니다." << endl;
+                return numeric_limits<double>::quiet_NaN(); // Not a Number
+            }
+            double operand2 = static_cast<double>(operandStack.Pop()); // 두 번째 피연산자
+            if (operandStack.isEmpty()) {
+                cout << "오류: 후위 표기식 계산 - 연산자에 필요한 피연산자가 부족합니다." << endl;
+                return numeric_limits<double>::quiet_NaN();
+            }
+            double operand1 = static_cast<double>(operandStack.Pop()); // 첫 번째 피연산자
+            double result = 0.0;
+
+            switch (token[0]) {
+            case '+': result = operand1 + operand2; break;
+            case '-': result = operand1 - operand2; break;
+            case '*': result = operand1 * operand2; break;
+            case '/':
+                if (operand2 == 0) {
+                    cout << "오류: 0으로 나눌 수 없습니다." << endl;
+                    return std::numeric_limits<double>::infinity(); // 무한대 반환
+                }
+                result = operand1 / operand2;
+                break;
+            default:
+                cout << "오류: 후위 표기식 계산 - 알 수 없는 연산자 '" << token[0] << "'" << endl;
+                return std::numeric_limits<double>::quiet_NaN();
+            }
+            operandStack.Push(static_cast<int>(result)); // 결과를 다시 스택에 푸시 (정밀도 손실)
+        }
+        else {
+            cout << "오류: 후위 표기식 계산 - 유효하지 않은 토큰 '" << token << "'" << endl;
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
+
+    if (operandStack.isEmpty()) {
+        cout << "오류: 후위 표기식 계산 - 스택에 최종 결과가 없습니다." << endl;
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    // 스택에 최종적으로 하나의 값만 남아있는지 확인 (top이 0이어야 함)
+    // top이 -1에서 시작하므로, 0이면 한 개의 요소가 남아있다는 의미
+   
+
+
+    return static_cast<double>(operandStack.Pop()); // 최종 결과 반환
+}
+
+
+// main 함수
+int main() {
+    char expression[MAX_EXPRESSION_LENGTH];
+    char infixTokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
+    char postfixTokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
+    int numInfixTokens;
+    int numPostfixTokens;
+    double result;
+
+    cout << "계산할 수식을 입력하세요 (최대 " << MAX_EXPRESSION_LENGTH - 1 << "자, 공백 포함 가능): ";
+    cin.getline(expression, MAX_EXPRESSION_LENGTH); // 사용자로부터 한 줄 전체 수식 입력 받기
+
+    // 1. 토큰화 (중위 표기식)
+    numInfixTokens = tokenizeExpressionNoLib(expression, infixTokens);
+
+    if (numInfixTokens == -1) {
+        cout << "수식 토큰화 중 오류가 발생하여 계산을 중단합니다." << endl;
+        return 1; // 오류 종료 코드
+    }
+
+    cout << "\n--- 토큰화 결과 (중위 표기) ---" << endl;
+    for (int i = 0; i < numInfixTokens; ++i) {
+        cout << "'" << infixTokens[i] << "' ";
+    }
+    cout << "\n---------------------------------" << endl;
+
+    // 2. 중위 표기식 -> 후위 표기식 변환
+    numPostfixTokens = infixToPostfix(infixTokens, numInfixTokens, postfixTokens);
+
+    if (numPostfixTokens == -1) {
+        cout << "후위 표기식 변환 중 오류가 발생하여 계산을 중단합니다." << endl;
+        return 1; // 오류 종료 코드
+    }
+
+    cout << "\n--- 후위 표기식 변환 결과 ---" << endl;
+    for (int i = 0; i < numPostfixTokens; ++i) {
+        cout << "'" << postfixTokens[i] << "' ";
+    }
+    cout << "\n----------------------------" << endl;
+
+    // 3. 후위 표기식 계산
+    result = evaluatePostfix(postfixTokens, numPostfixTokens);
+
+   
+ 
+        cout << "\n--- 계산 결과 ---" << endl;
+        cout << "결과: " << result << endl;
+
+
+    return 0; 
+}
