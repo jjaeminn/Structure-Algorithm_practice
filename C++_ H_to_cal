@@ -12,7 +12,234 @@ using namespace std;
 
 // 일단 주요 기능은 직접 짯고 범위 빠진 예외처리 정도만 구글링으로 찾음 
 
+// Node 구조체
+struct Node {
+    int data;        
+    Node* prev;      
+    Node* next;      
+    
+    
+    Node(int val) : data(val), prev(nullptr), next(nullptr) {}
+};
 
+class DoublyLinkedList {
+private:
+    Node* head;       
+    Node* tail;     
+    Node* first;
+    Node* final;
+    int size;
+ 
+
+public:
+   
+    DoublyLinkedList() : head(nullptr), tail(nullptr), size(0) {}
+
+    
+    ~DoublyLinkedList() {
+        Node* current = head; 
+        while (current != nullptr) {
+            Node* nextNode = current->next; 
+            delete current; 
+            current = nextNode;
+        }
+        head = nullptr; 
+        tail = nullptr;
+        size = 0; 
+    }
+
+    // isEmpty: 큐가 비어있는지 확인합니다. (멤버 변수를 수정하지 않으므로 const 사용)
+    bool isEmpty() const { 
+        return head == nullptr; // 또는 return size == 0;
+    }
+
+    // pushBack: 리스트의 뒤쪽에 새 노드를 추가합니다.
+    void pushBack(int data) { 
+        Node* newNode = new Node(data); 
+
+        // 1. 리스트가 비어있는 경우 (첫 노드를 추가하는 경우)
+        if (isEmpty()) {
+            head = newNode; 
+            tail = newNode;
+           
+        }
+        // 2. 리스트가 비어있지 않은 경우 (기존 노드 뒤에 추가하는 경우)
+        else {
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+        size++; // 리스트의 크기 증가
+        cout << data << "가 리스트 뒤에 추가되었습니다. (현재 크기: " << size << ")" << endl;
+    }
+
+    int popFront() {
+        if (isEmpty()) {
+            return -1;
+        }
+
+        if (head == tail) { // 또는 size == 1로 검사해도 됩니다.
+            head = nullptr;
+            tail = nullptr;
+        }
+        Node* popNode = head; // pop할 노드 Head로 설정 
+        int popdata = popNode->data;
+        head = head->next;
+        head->prev = nullptr;
+        delete popNode;
+        size--;
+        return popdata;
+   }
+
+
+    int popBack() {
+        if (isEmpty()) {
+            return -1;
+        }
+
+        if (head == tail) { // 또는 size == 1로 검사해도 됩니다.
+            head = nullptr;
+            tail = nullptr;
+        }
+
+        Node* popNode = tail; // pop할 노드 tail로 설정 
+        int popdata_tail = popNode->data;
+        
+        tail = tail->prev; //tail 삭제로 인한 뒤로 이동
+        tail->next = nullptr;
+        delete popNode;
+        size--;
+        return popdata_tail;
+
+    }
+
+    void displayForward() const {
+        if (isEmpty()) {
+           cout << "리스트가 비어있습니다." << endl;
+            return;
+        }
+        Node* current = head;
+       cout << "리스트 (앞 -> 뒤): ";
+        while (current != nullptr) {
+           cout << current->data << " ";
+            current = current->next;
+        }
+        cout <<endl;
+    }
+
+    // 리스트 내용을 뒤에서부터 출력 (디버깅용)
+    void displayBackward() const {
+        if (isEmpty()) {
+           cout << "리스트가 비어있습니다." <<endl;
+            return;
+        }
+        Node* current = tail;
+        std::cout << "리스트 (뒤 -> 앞): ";
+        while (current != nullptr) {
+            cout << current->data << " ";
+            current = current->prev;
+        }
+            cout << endl;
+    }
+
+    pair<Node*,int> Search(int targetdata)const {
+        if (isEmpty()) {
+            return nullptr;
+        }
+
+        Node* currnet = head;
+        int count = 0;
+        while (current != nullptr) {
+            count++;
+            if (current->data == targetdata) {
+
+                return {current, count};
+            }
+            current = current->next;
+        }
+        return { nullptr,count };
+    }
+
+    Node* Splice(int a_val, int b_val, int x_val) { // a~b 사이에 x를 놓는 방법 
+        
+       
+        std::pair<Node*, int> a_result = Search(a_val);
+        Node* startNode = a_result.first; // 찾은 노드의 주소를 받음 -> 근데 포인터 변수를 받아서 노드의 data값 받음 
+        int startIndex = a_result.second; // count 받음 
+
+        std::pair<Node*, int> b_result = Search(b_val);
+        Node* endNode = b_result.first;
+        int endIndex = b_result.second;
+
+        Node* X = new Node(x_val); // 삽입할 새로운 노드 X 생성
+       
+        if (startNode == nullptr) {
+           cout << "오류: 시작 노드(" << a_val << ")를 리스트에서 찾을 수 없습니다." << endl;
+            delete X; // 생성한 X 노드 메모리 해제
+            return;
+        }
+        if (endNode == nullptr) { // startNode가 nullptr이 아니면 endNode도 체크
+           cout << "오류: 끝 노드(" << b_val << ")를 리스트에서 찾을 수 없습니다." << endl;
+            delete X;
+            return;
+        }
+
+        // (2) 조건1: 시작 노드(a)가 끝 노드(b)보다 리스트에서 뒤에 있는 경우
+        // startNode와 endNode가 모두 유효한 경우에만 인덱스 비교
+        if (startIndex > endIndex) {
+            std::cout << "오류: 시작 노드(" << a_val << ")가 끝 노드(" << b_val << ")보다 뒤에 있습니다. 유효하지 않은 범위입니다." << std::endl;
+            delete X;
+            return;
+        }
+        // --- 유효성 검사 통과: 이제 실제 Splice 로직 시작 ---
+
+
+        Node* nodeBeforeStart = startNode->prev; // startNode의 이전 노드
+        Node* nodeAfterEnd = endNode->next;     // endNode의 다음 노드
+
+        // 기존 연결을 끊고 새로운 연결을 만듭니다.
+        if (nodeBeforeStart != nullptr) {
+            nodeBeforeStart->next = nodeAfterEnd;
+        }
+        else {
+            head = nodeAfterEnd;
+        }
+
+        if (nodeAfterEnd != nullptr) {
+            nodeAfterEnd->prev = nodeBeforeStart;
+        }
+        else {
+    
+            tail = nodeBeforeStart;
+        }
+
+       
+        X->prev = nodeBeforeStart;
+        X->next = nodeAfterEnd;
+
+        if (nodeBeforeStart != nullptr) {
+            nodeBeforeStart->next = X;
+        }
+        else {
+            head = X;
+        }
+
+        if (nodeAfterEnd != nullptr) {
+            nodeAfterEnd->prev = X;
+        }
+        else {
+            tail = X;
+        }
+        size = (size - (endIndex - startIndex)); // x_val 1개만 들어가고 나머지는 다 삭제
+
+        std::cout << "Splice 작업이 완료되었습니다: " << a_val << "부터 " << b_val << "까지의 노드가 제거되고 " << x_val << "이(가) 삽입되었습니다." << std::endl;
+    }
+
+
+
+
+
+};
 // 주요 stack에서 일어나는 함수들 모음 
 class stack {
 private:
