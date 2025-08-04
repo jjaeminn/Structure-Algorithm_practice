@@ -1,0 +1,215 @@
+#include <iostream>
+#include <vector>
+#include <algorithm> // std::swap 사용을 위해
+using namespace std;
+
+#define BASE_SIZE 16
+class Node {
+public:
+    int key;
+    Node* parent;
+    Node* child_left;
+    Node* child_right;
+
+    Node(int k) : key(k), parent(nullptr), child_left(nullptr), child_right(nullptr) {}
+};
+
+class binary_tree {
+private:
+    int size;
+    Node* root;
+
+    // 재귀적 삽입을 위한 헬퍼 함수
+    void insertNode(Node*& current, Node* newNode) {
+        if (current == nullptr) { // 가장 위의 노드 root 
+            current = newNode;
+        }
+        else if (newNode->key <= current->key) { // 왼쪽 노드에 놓기 
+            insertNode(current->child_left, newNode);
+            if (current->child_left) {
+                current->child_left->parent = current;
+            }
+        }
+        else { // newNode->key > current->key // 오른쪽 노드에 놓기 
+            insertNode(current->child_right, newNode); 
+            if (current->child_right) {
+                current->child_right->parent = current;
+            }
+        }
+    }
+
+public:
+    binary_tree() : root(nullptr), size(0) {}
+
+    ~binary_tree() {
+        // 모든 노드의 메모리를 해제하는 올바른 소멸자 로직이 필요합니다.
+        // 일반적으로 재귀적인 후위 순회(post-order traversal)를 사용하여 구현합니다.
+    }
+
+    bool isEmpty() const {
+        return size == 0;
+    }
+
+    void insert(int key) {
+        Node* newNode = new Node(key);
+        if (isEmpty()) {
+            root = newNode;
+            size++;
+        }
+        else {
+            insertNode(root, newNode);
+            size++;
+        }
+    }
+
+
+
+    Node* find_node(int key) {
+        Node* current = root;
+        while (current != nullptr) {
+            if (current->key == key) {
+                // 키를 찾았으면 해당 노드를 반환하고 종료
+                return current;
+            }
+            else if (current->key < key) {
+                current = current->child_right;
+            }
+            else {
+                current = current->child_left;
+            }
+        }
+        // 루프가 끝날 때까지 키를 찾지 못했으면 nullptr 반환
+        return nullptr;
+    }
+
+    Node* find_insertion_loc(int key) {
+        if (isEmpty()) {
+            return nullptr; // 트리가 비어있으면 부모가 없음
+        }
+        Node* parent = nullptr;
+        Node* current = root;
+        while (current != nullptr) {
+            parent = current;
+            if (current->key < key) {
+                current = current->child_right;
+            }
+            else {
+                current = current->child_left;
+            }
+        }
+        return parent;
+    }
+
+
+};
+
+
+
+
+// 전역 변수 대신 배열을 함수 인자로 전달
+// 힙의 크기를 알아야 하므로 length도 인자로 받음
+bool is_leaf_node(int parent_index, int length) {
+    int left_child_index = 2 * parent_index + 1;
+    return left_child_index >= length; // 오른쪽 자식 노드가 존재한다면 반드시 왼쪽 자식 노드도 존재 <(대우)> 왼쪽 자식 노드가 존재하지 않는다면 오른쪽 자식의 노드 존재 X 
+ // 즉 자식의 왼쪽 노드가 배열의 범위를 벗어나면 오른쪽 노드도 없다는거니까 가장 마지막 노드로 판별 = 리프노드 
+}
+int find_max_index_from_children(const std::vector<int>& arr, int parent_index, int length) { // 매개변수는 vector을 이용해서 arr 가져오고 0으로 초기화 , 부모 인덱스, 원소 갯수 받기 
+    
+    int left_child_index = 2 * parent_index + 1; // 왼쪽 자식 노드 
+    int right_child_index = 2 * parent_index + 2;// 오른쪽 자식 노드 
+    int largest_index = parent_index;
+
+    if (left_child_index < length && arr[left_child_index] > arr[largest_index]) { // 리프노드가 아니고 left 노드가 가장 크면 
+        largest_index = left_child_index;
+    }
+
+    // 오른쪽 자식 노드가 존재하고, 현재 largest_index의 값보다 크면 업데이트
+    if (right_child_index < length && arr[right_child_index] > arr[largest_index]) { // 리프노드가 아니고 right 노드가 가장 크면 
+        largest_index = right_child_index;
+    }
+
+    return largest_index;
+}
+void heapify_down(vector<int>& arr, int parent_index, int length) {
+    while (!is_leaf_node(parent_index, length)) {
+        int largest_index = find_max_index_from_children(arr, parent_index, length);
+
+        // 부모가 가장 큰 값이 아니면, 자식과 교환하고 계속 아래로 내려감
+        if (largest_index != parent_index) {
+            swap(arr[parent_index], arr[largest_index]);
+            parent_index = largest_index; // 다음 루프를 위해 인덱스 업데이트
+        }
+        else {
+            // 부모가 가장 크면 힙 속성이 만족되므로 루프 종료
+            break;
+        }
+    }
+}
+void heapify_up(vector<int>& arr) {
+    // 힙에 새롭게 추가된 요소의 인덱스를 현재(자식) 인덱스로 설정
+    int current_child_index = arr.size() - 1;
+
+    // 루트 노드(인덱스 0)에 도달할 때까지 반복
+    while (current_child_index > 0) {
+        // 부모 노드의 인덱스 계산
+        int parent_index = (current_child_index - 1) / 2;
+
+        // 현재 노드의 값이 부모 노드의 값보다 크면 (최대 힙 기준)
+        if (arr[current_child_index] > arr[parent_index]) {
+            // 부모와 자식의 위치를 바꿈
+           swap(arr[current_child_index], arr[parent_index]);
+
+            // 현재 노드 위치를 부모 노드의 위치로 업데이트하여 다음 반복 준비
+            current_child_index = parent_index;
+        }
+        else {
+            // 부모가 더 크거나 같으면 이미 힙 속성이 만족되므로 종료
+            break;
+        }
+    }
+}
+int del_max(vector<int>& arr) {
+    if (arr.empty()) {
+        cout << "뺄 값이 없음" << endl;
+        return -1;
+    }
+
+    int max_value = arr[0];// 루트값 빼기 
+    arr[0] = arr.back();
+    arr.pop_back();
+    if (arr.size() > 1) {
+        heapify_down(arr, 0, arr.size()); // 재정렬 
+    }
+    return max_value;
+}
+void make_heap(vector<int>& arr) {
+    int length = arr.size();
+    // 리프 노드의 부모 노드부터 시작하여 역순으로 힙 다운 수행
+    for (int i = (length / 2) - 1; i >= 0; --i) { // 부모 노드 부터 
+        heapify_down(arr, i, length);
+    }
+   cout << "make-heap 완료" << endl;
+}
+
+
+
+
+int main() {
+    vector<int> arr = { 1, 3, 5, 4, 6, 13, 10, 9, 8, 15, 17 };
+
+    cout << "Original array: ";
+    for (int val : arr) {
+        cout << val << " ";
+    }
+    cout << std::endl;
+
+    make_heap(arr);
+
+    cout << "Max-Heap array: ";
+    for (int val : arr) {
+        cout << val << " ";
+    }
+    cout << std::endl;
+
+    return 0;
+}
