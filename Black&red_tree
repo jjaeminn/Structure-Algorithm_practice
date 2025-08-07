@@ -1,0 +1,92 @@
+#include <iostream>
+
+// Node 구조체 (bh 함수에 맞춰서 재구성)
+struct Node {
+    int key;
+    Node* parent;
+    Node* child_left;
+    Node* child_right;
+    int black; // 1이면 black, 0이면 red
+};
+
+Node* find_node(int key, Node* root) { // 값 찾기 
+    Node* current = root;
+    while (current != nullptr) {
+        if (current->key == key) {
+            return current;
+        }
+        else if (current->key < key) {
+            current = current->child_right;
+        }
+        else {
+            current = current->child_left;
+        }
+    }
+    return current;
+}
+
+// bh 함수
+Node* bh(int key, Node* root) {
+    Node* current = find_node(key, root);
+    if (current == nullptr) {
+        return nullptr;
+    }
+
+    if (current->parent == nullptr) { // 루트 노드이면
+        current->black = 1; // black으로 설정
+    }
+    else if (current->child_left == nullptr && current->child_right == nullptr) { // 리프 노드이면
+        // 이 부분은 널 자식 노드에 색깔을 부여하는 코드인데, 실제 Red-Black Tree에서는 
+        // 널 자식을 'black'으로 간주하지만, 노드로 만들지는 않습니다.
+        // 이 코드는 현재 구현 방식에 맞춰 수정이 필요할 수 있습니다.
+        // 예를 들어, 널 자식을 나타내는 '센티넬(sentinel)' 노드를 사용하기도 합니다.
+        // 여기서는 기존 코드에 맞춰 두었으나, 논리적 오류가 있을 수 있습니다. -> gpt 질문 부분 
+        current->child_right->black = 1;
+        current->child_left->black = 1;
+    }
+    else if (current->black == 0) { // 현재 노드가 red이면
+        current->child_right->black = 1; // 자식들은 black
+        current->child_left->black = 1;
+    }
+    return root; // 루트 노드를 반환
+}
+
+// Black 노드 개수를 세는 함수
+int countBlackNodes(Node* node) { // 노드를 받는 함수 
+    if (node == nullptr) {
+        return 0;
+    }
+
+    int count = (node->black == 1) ? 1 : 0; //블랙이면 1, 아니면 red = 0
+    count += countBlackNodes(node->child_left); // 재귀함수로 계속 호출을 통해서 count 세기 
+    count += countBlackNodes(node->child_right); // count로 node black 센다음에, 다시 함수 호출 반복 nullptr만날때 까지
+
+    return count;
+}
+
+
+int main() {
+    // 트리를 생성하고 노드를 추가하는 예시
+    Node* root = new Node{ 10, nullptr, nullptr, nullptr, 0 }; // 루트 노드 (red)
+    Node* node5 = new Node{ 5, root, nullptr, nullptr, 0 }; // 자식 노드 (red)
+    root->child_left = node5;
+    Node* node15 = new Node{ 15, root, nullptr, nullptr, 0 }; // 자식 노드 (red)
+    root->child_right = node15;
+
+    // 초기 상태에서 black 노드 개수 세기
+    std::cout << "초기 black 노드 개수: " << countBlackNodes(root) << std::endl;
+
+    // bh 함수 호출 (key가 10인 노드에 색깔 규칙 적용)
+    root = bh(10, root);
+
+    // bh 함수 호출 후, black 노드 개수 세기
+    int total_black_nodes = countBlackNodes(root);
+    std::cout << "bh 함수 호출 후 black 노드 개수: " << total_black_nodes << std::endl;
+
+    // 메모리 해제
+    delete root->child_left;
+    delete root->child_right;
+    delete root;
+
+    return 0;
+}
