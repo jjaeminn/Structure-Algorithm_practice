@@ -1,0 +1,106 @@
+#include <iostream>
+
+class Two_three_four_Tree {
+private:
+    struct Node {
+        int keys[3];
+        Node* children[4];
+        int keyCount;
+
+        Node() : keyCount(0) {
+            for (int i = 0; i < 3; ++i) keys[i] = 0;
+            for (int i = 0; i < 4; ++i) children[i] = nullptr;
+        }
+
+        bool isFull() const {
+            return keyCount == 3;
+        }
+    };
+
+    Node* root;
+
+    void splitNode(Node* parent, Node* fullChild, int keyToInsert) {// 꽉찬 노드라고 가정 
+        // 중간 키를 부모로 올림
+        int middleKey = fullChild->keys[1];// 가운데 키
+
+        // 새로운 노드 2개 생성
+        Node* newRightChild = new Node();
+        newRightChild->keys[0] = fullChild->keys[2];// 가장 큰키를 새노드로 옮김
+        newRightChild->keyCount = 1;// 새 노드의 키 개수 1로 설정 
+
+        // 자식 노드 분배
+        if (fullChild->children[2] != nullptr) {// 리프 노드가 아니라면 
+            newRightChild->children[0] = fullChild->children[2];// 자식노드 분배 
+            newRightChild->children[1] = fullChild->children[3];
+        }
+
+        // 기존 4-노드를 2-노드로 만듦
+        fullChild->keyCount = 1;
+        fullChild->children[2] = nullptr; // 4->2로 만듬 뚫기 
+        fullChild->children[3] = nullptr;
+
+        // 부모 노드에 중간 키와 새로운 자식 노드 추가
+        int parentKeyIndex = 0;
+        while (parentKeyIndex < parent->keyCount && parent->keys[parentKeyIndex] < middleKey) {
+            parentKeyIndex++; // middleKey가 들어갈 위치 찾기 
+        }
+
+        // 부모의 키와 자식 포인터 이동
+        for (int i = parent->keyCount; i > parentKeyIndex; --i) { // parentKeyindex만큼 밀어내기 
+            parent->keys[i] = parent->keys[i - 1]; 
+            parent->children[i + 1] = parent->children[i];
+        }
+
+        // 부모에 새로운 키와 자식 삽입
+        parent->keys[parentKeyIndex] = middleKey; // 삽입 
+        parent->children[parentKeyIndex + 1] = newRightChild;
+        parent->keyCount++;
+    }
+
+    void insertRecursive(Node*& current, int key) {// Node*& current은 자기 자신을 가리키는 포인터 변수이다. 
+        // 4-노드 분할
+        if (current->isFull()) { // 키가 3개인지 확인
+            if (current == root) { // 루트면 그니까 키가 꽉찼고 루트이면 
+                Node* newRoot = new Node(); // 새롭게 노드 1개 만들고 
+                newRoot->children[0] = current; // currnet를 거기다 지정 
+                root = newRoot; // root 업데이트 
+            }
+            splitNode(current, current->children[0], key); // 꽉찾으니까 노드를 두 개로 나눔 
+        }
+
+       // 리프노드인 경우 
+        if (current->children[0] == nullptr) { // 리프 노드에 도달
+            int i = current->keyCount - 1; // 가장 오른쪽부터 시작 
+            while (i >= 0 && current->keys[i] > key) { //current key가 기존 ket보다 크면 
+                current->keys[i + 1] = current->keys[i];// 오른쪽으로 한칸이동 
+                i--; // 왼쪽으로 이동해서 다음 키 확인 
+            }
+            current->keys[i + 1] = key; // 오른쪽에 키 삽입
+            current->keyCount++;// 카운트 증가 
+        }
+        else { // 내부 노드인 경우 
+            int childIndex = 0;
+            while (childIndex < current->keyCount && current->keys[childIndex] < key) {
+                childIndex++; // key가 더 크면 오른쪽으로 이동 
+            }
+            insertRecursive(current->children[childIndex], key);// 재귀함수 실행 
+        }
+    }
+/// <summary>
+/// 루트 노드 인 경우에는 루트 추가 후 값 놓기, 리프노드인 경우에는 가장 오른쪽부터 key값을 확인해 만약에 안에 들어있는 key값이 더 크면 안에 들어있는 key값을 오른쪽으로 이동하고 다음 값을 판별하기위해 왼쪽으로 -- 로 이동하는것이고, 내부 노드인 경우에는 0부터 시작해서 놓으려는 재귀함수가 더 크면 오른쪽으로 이동해야하니까 재귀함수를 불러 계속 이동하고 나중에는 결국 리프노드로 가는 원리
+/// </summary>
+
+public:
+    Two_three_four_Tree() : root(nullptr) {}
+
+    void insert(int key) {
+        if (root == nullptr) {
+            root = new Node();
+            root->keys[0] = key;
+            root->keyCount = 1;
+        }
+        else {
+            insertRecursive(root, key);
+        }
+    }
+};
