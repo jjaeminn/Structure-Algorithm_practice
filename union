@@ -1,0 +1,71 @@
+#include <iostream>
+
+struct Node {
+    int key;
+    int rank; 
+    Node* parent;
+};
+
+
+Node* makeset(int x) {
+    Node* newNode = new Node(); // 새로운 노드 생성 
+    newNode->key = x; // 키 지정 
+    newNode->rank = 0; // 랭크 지정 
+    newNode->parent = newNode; // 새로운 노드의 부모는 자기 자신으로 지정 
+    return newNode;
+}
+
+
+Node* find_root(Node* n) {
+    if (n->parent == n) { // 노드의 부모가 자기 자신이라면 리턴 
+        return n; 
+    }
+    
+    n->parent = find_root(n->parent); // D -> C -> B -> A라면 D->parent = find_root(C) 부르고 계속 반복 
+    return n->parent;
+}
+
+
+void unite_sets(Node* x, Node* y) { // 서로 합치기 
+    Node* root_x = find_root(x);
+    Node* root_y = find_root(y);
+
+    if (root_x != root_y) { // 루트가 같지 않다면 
+     
+        if (root_x->rank > root_y->rank) { // X의 rank값이 y의 rank값 보다 크면 X아래 Y박기 즉 Y의 부모는 X 
+            root_y->parent = root_x;
+        }
+        else if (root_y->rank > root_x->rank) { // 위의 반대 
+            root_x->parent = root_y;
+        }
+        else { // 같으면 아무렇게나 붙인다음에 아래 쪽으로 붙인 rank 1개 더하기 
+            root_y->parent = root_x;
+            root_x->rank++;
+        }
+    }
+}
+
+int main() {
+    // Example usage
+    Node* a = makeset(1);
+    Node* b = makeset(2);
+    Node* c = makeset(3);
+    Node* d = makeset(4);
+
+    unite_sets(a, b); // Union sets containing 1 and 2
+    unite_sets(c, d); // Union sets containing 3 and 4
+    unite_sets(b, d); // Union sets containing 1, 2, 3, and 4
+
+    // Find the representative for each node
+    Node* root_a = find_root(a);
+    Node* root_b = find_root(b);
+    Node* root_c = find_root(c);
+    Node* root_d = find_root(d);
+
+    std::cout << "Root of set a (1): " << root_a->key << std::endl;
+    std::cout << "Root of set b (2): " << root_b->key << std::endl;
+    std::cout << "Root of set c (3): " << root_c->key << std::endl;
+    std::cout << "Root of set d (4): " << root_d->key << std::endl;
+
+    return 0;
+}
