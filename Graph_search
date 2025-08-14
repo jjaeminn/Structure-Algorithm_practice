@@ -1,0 +1,161 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+const int rows = 7;
+const int cols = 7;
+const int V = 5;
+const int arr_base = 16;
+int arr = 0;
+int adj_matrix[rows][cols] = { 0 };
+int find_val[cols] = {0};
+int curr_time = 1;
+vector<int> mark[arr_base];
+vector<int>pre[arr_base];
+vector<vector<int>> adj_list(V);
+
+
+const int V_DFS = 5; // DFS에 사용할 정점의 수
+vector<vector<int>> adj_list_dfs(V_DFS); // DFS용 인접 리스트
+int visited[V_DFS] = { 0 }; // 0: 미방문, 1: 방문
+int parent[V_DFS] = { -1 }; // 부모 노드 저장, 초기값 -1
+
+// 무방향 그래프 인접 행렬 표현
+void addEdge_matrix(int adj[][cols], int u, int v) {
+    adj[u][v] = 1; // u와 v를 연결
+    adj[v][u] = 1; // 무방향이므로 v와 u도 연결
+}
+
+// find 인접행렬에서 주위의 값을 찾으려면 rows를 입력 받아야한다. 
+void find_edge(int row) {
+    for (int i = 0;i < cols; i++) {
+        if (adj_matrix[row][i] == 1) {
+            find_val[i] = i + 1;// 0을 첫 번재 행이라고 치면 
+        }
+       
+    }
+    for (int j = 0; j < cols;j++) {
+        if (find_val[j] != 0) {
+            cout << "주위 값: " << find_val[j] << endl;
+        }
+       
+    }
+   
+}
+
+void printGraph_matrix(int adj[][cols], int V) {
+    cout << "인접 행렬 표현:" << endl;
+    for (int i = 0; i < V; i++) {
+        for (int j = 0; j < V; j++) {
+            cout << adj[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+
+
+
+// 무방향 그래프 인접 리스트 표현
+void addEdge_list(vector<vector<int>>& adj, int u, int v) {
+    adj[u].push_back(v); // u와 v를 연결
+    adj[v].push_back(u); // 무방향이므로 v와 u도 연결
+}
+
+vector<int> find_edge_list(vector<vector<int>>& adj,int u) { // U에 따른 인접한 값 다 뽑기 
+    return adj[u];
+
+}
+
+void printGraph_list(const vector<vector<int>>& adj) {
+    cout << "\n인접 리스트 표현:" << endl;
+    for (size_t i = 0; i < adj.size(); ++i) {
+        cout << "정점 " << i << "의 인접 리스트: ";
+        for (int neighbor : adj[i]) {
+            cout << neighbor << " -> ";
+        }
+        cout << "NULL" << endl;
+    }
+}
+
+// DFS 함수
+void DFS(int u) {
+    visited[u] = 1; // 현재 노드 u를 방문했다고 표시
+    cout << u << " "; // 방문한 노드 출력
+    curr_time += 1;
+    // u와 연결된 모든 인접 노드를 순회
+    for (int v : adj_list_dfs[u]) {
+        // 인접 노드 v가 아직 방문하지 않았다면
+        if (visited[v] == 0) {
+            parent[v] = u; // v의 부모를 u로 설정
+            DFS(v); // v에 대해 DFS 재귀 호출
+        }
+    }
+}
+
+// DFS 탐색을 시작하기 위한 함수
+void runDFS() {
+    cout << "DFS 탐색 시작 (정점 0부터):" << endl;
+    // 모든 정점에 대해 DFS를 시작 (연결 그래프가 아닌 경우를 대비)
+    for (int i = 0; i < V_DFS; ++i) {
+        if (visited[i] == 0) {
+            DFS(i);
+        }
+    }
+cout << endl;
+}
+
+
+int main() {
+   
+  
+
+    // 1. 인접 행렬
+    
+    addEdge_matrix(adj_matrix, 1, 2);
+    addEdge_matrix(adj_matrix, 2, 3);
+    addEdge_matrix(adj_matrix, 3, 5);
+    addEdge_matrix(adj_matrix, 2, 4);
+    addEdge_matrix(adj_matrix, 4, 6);
+    printGraph_matrix(adj_matrix, V);
+    find_edge(2);
+
+
+
+    // 2. 인접 리스트
+    // vector의 vector로 동적 할당
+  
+    addEdge_list(adj_list, 0, 1);
+    addEdge_list(adj_list, 0, 4);
+    addEdge_list(adj_list, 1, 2);
+    addEdge_list(adj_list, 1, 3);
+    addEdge_list(adj_list, 1, 4);
+    addEdge_list(adj_list, 2, 3);
+    addEdge_list(adj_list, 3, 4);
+    // 일단 탐색할 거리 만들어 놓음 
+
+
+    find_edge_list(adj_list,1); // adj_list의 1 주변 값 호출 
+    printGraph_list(adj_list);
+
+    // DFS용 그래프에 간선 추가
+    adj_list_dfs[0].push_back(1);
+    adj_list_dfs[0].push_back(4);
+    adj_list_dfs[1].push_back(0);
+    adj_list_dfs[1].push_back(2);
+    adj_list_dfs[1].push_back(3);
+    adj_list_dfs[1].push_back(4);
+    adj_list_dfs[2].push_back(1);
+    adj_list_dfs[2].push_back(3);
+    adj_list_dfs[3].push_back(1);
+    adj_list_dfs[3].push_back(2);
+    adj_list_dfs[3].push_back(4);
+    adj_list_dfs[4].push_back(0);
+    adj_list_dfs[4].push_back(1);
+    adj_list_dfs[4].push_back(3);
+
+    runDFS();
+
+    return 0;
+}
