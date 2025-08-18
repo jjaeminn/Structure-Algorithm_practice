@@ -1,0 +1,68 @@
+#include <iostream>
+using namespace std;
+
+
+int recursive(int x) { // 재귀 함수 ,팩토리얼 함수 
+    if (x == 1) {
+        return 1; 
+    }
+    return recursive(x - 1) * x;
+}
+
+int sum(int a, int b) { 
+
+    if (a == b) {
+        return a;
+  }
+
+    if (a > b) {
+        return 0;
+    }
+
+    int m = (a + b) / 2;
+    return sum(a, m) + sum(m + 1, b);
+}
+
+// power함수는 a^n을 하는 함수이다. 
+int power_one(int a, int n) {
+    if (n == 1) {
+        return a;
+
+    }
+    return a * power_one(a, n - 1); // 재귀 케이스 마지막값 * 1~마지막 -1
+}
+
+int power_two(int a, int n) {
+    if (n == 1) {
+        return a;
+    }
+    if (n == 0) {
+        return 1;
+    }
+    if (n % 2 == 0) {
+        return power_two(a, n / 2) * power_two(a, n / 2); // 반반 
+    }
+    else {
+        return power_two(a, n / 2) * power_two(a, n / 2) * a; // 홀수면 하나삑나서 * a 
+    }
+}
+
+int power_three(int a, int n) {
+    int x = power_three(a, n / 2); // 중복 계산 줄이기 
+
+    if (n % 2 == 0) {
+        return a * a;
+    }
+
+   else {
+       return x * x * a;
+       }
+}
+
+int main() {
+    cout << sum(3, 8);
+   
+
+    
+    return 0;
+}
