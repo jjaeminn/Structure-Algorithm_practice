@@ -1,0 +1,285 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include<tuple>
+
+using namespace std;
+
+const int MATRIX_SIZE = 2;//행렬 사이즈 
+const long long MOD = 1000000007; // 혹시 모를 초과 값 방지 
+
+using Matrix = vector<vector<long long>>;
+
+// 두 행렬을 곱하는 함수 (이전과 동일)
+Matrix multiply(Matrix A, Matrix B) {
+    Matrix result(MATRIX_SIZE, vector<long long>(MATRIX_SIZE, 0));
+    for (int i = 0; i < MATRIX_SIZE; ++i) {//2
+        for (int j = 0; j < MATRIX_SIZE; ++j) {//2 by 2 행렬에 
+            for (int k = 0; k < MATRIX_SIZE; ++k) {
+                result[i][j] = (result[i][j] + A[i][k] * B[k][j]) % MOD; // 행렬의 곱 표현 
+            }
+        }
+    } // 이 형태는 기억하는게 좋겠다 
+    return result;
+}
+
+// 행렬을 거듭제곱하는 함수 (재귀적 분할 정복)
+Matrix matrix_power_recursive(Matrix A, long long n) {
+    Matrix identity(MATRIX_SIZE, vector<long long>(MATRIX_SIZE, 0));
+    identity[0][0] = 1;
+    identity[1][1] = 1;
+
+    // 기저 사례: n이 0일 경우 단위 행렬 반환
+    if (n == 0) {
+        return identity;
+    }
+
+    // n이 1일 경우 A를 그대로 반환
+    if (n == 1) {
+        return A;
+    }
+
+    // 분할 정복: n/2 거듭제곱을 재귀적으로 계산
+    Matrix temp = matrix_power_recursive(A, n / 2);
+
+    // n이 짝수일 경우
+    if (n % 2 == 0) {
+        return multiply(temp, temp); // 짝수면 그대로 계산 
+    }
+    // n이 홀수일 경우
+    else {
+        return multiply(multiply(temp, temp), A); // 홀수면 1개 비니까 * A후 계산 
+    }
+}
+
+tuple<string, string> splitNumber(string s) {
+    int len = s.length();
+    int k = len / 2;
+
+    string front = s.substr(0, k);
+    string back = s.substr(k); // 두 번째 인자를 생략하면 끝까지 추출
+
+    return make_tuple(front, back);
+}
+
+
+
+// 카라추바 알고리즘을 이용한 큰 수 곱셈
+// 문자열을 사용해 구현
+string karatsuba(string x, string y) {
+    // 기저 조건: 숫자가 작아지면 일반 곱셈
+    if (x.length() <= 2 && y.length() <= 2) {
+        return to_string(stoll(x) * stoll(y));
+    }
+
+    // 두 수를 같은 길이로 맞추기
+    int len = max(x.length(), y.length());
+    if (len % 2 != 0) { // 길이가 홀수면 짝수로 맞춰줌
+        len++;
+    }
+
+    // 0을 채워 길이를 맞춰줌
+    string padded_x = string(len - x.length(), '0') + x; //MAX값에 따라 0이 채워짐 
+    string padded_y = string(len - y.length(), '0') + y;
+
+    // 분할 정복
+    string a_str, b_str, c_str, d_str;
+    tie(a_str, b_str) = splitNumber(padded_x);
+    tie(c_str, d_str) = splitNumber(padded_y);
+
+    // 재귀 호출로 3번의 곱셈 수행
+    string ac = karatsuba(a_str, c_str);
+    string bd = karatsuba(b_str, d_str);
+
+    string ab_sum_str = to_string(stoll(a_str) + stoll(b_str));
+    string cd_sum_str = to_string(stoll(c_str) + stoll(d_str));
+
+    string sum_prod = karatsuba(ab_sum_str, cd_sum_str);
+
+    // 최종 결과 계산
+    string ad_plus_bc = to_string(stoll(sum_prod) - stoll(ac) - stoll(bd));
+
+    // (이후 10^k승을 곱하여 최종 결과를 합치는 로직)
+    // 이 부분은 문자열 덧셈 함수가 필요하여 복잡해질 수 있습니다.
+    // 하지만 개념적으로는 위와 같은 방식으로 세 번의 재귀적 곱셈을 이용합니다.
+
+    return ad_plus_bc; 
+}
+
+
+int main() {
+    long long n;
+    string k;
+    string c;
+    cout << "피보나치 수열의 몇 번째 항을 계산할까요? (n) : ";
+    cin >> n;
+
+    if (n <= 1) {
+        cout << "F(" << n << ") = " << n << endl;
+        return 0;
+    }
+
+    Matrix base_matrix = { {1, 1}, {1, 0} };
+
+    Matrix result_matrix = matrix_power_recursive(base_matrix, n - 1);
+
+    cout << "F(" << n << ") = " << result_matrix[0][0] << endl;
+    cout << "입력값" << endl;
+    cin >> k;
+   cout << "입력값" << endl;
+   cin >> c;
+
+   cout << karatsuba(k, c);
+   
+    return 0;
+}
+
+
+
+
+// 위는 문자열의 계산을 구한하지 못해 이론만 적용한 것 
+
+// 아래는 진짜 작동하는 코드 -> 개념 정리 필요 
+
+
+
+
+
+/*#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <tuple>
+
+using namespace std;
+
+// 문자열 숫자 앞의 불필요한 0을 제거하는 함수
+string removeLeadingZeros(string s) {
+    size_t first_digit = s.find_first_not_of('0');
+    if (string::npos == first_digit) { // 모든 문자가 0일 경우
+        return "0";
+    }
+    return s.substr(first_digit);
+}
+
+// 문자열 숫자 두 개를 더하는 함수
+string add(string num1, string num2) {
+    string result = "";
+    int carry = 0; // 올림수
+    int i = num1.length() - 1;
+    int j = num2.length() - 1;
+
+    // 두 문자열의 끝부터 더하고 올림 처리
+    while (i >= 0 || j >= 0 || carry) {
+        int sum = carry;
+        if (i >= 0) {
+            sum += num1[i--] - '0';
+        }
+        if (j >= 0) {
+            sum += num2[j--] - '0';
+        }
+        result.push_back(sum % 10 + '0');
+        carry = sum / 10;
+    }
+    reverse(result.begin(), result.end());
+    return removeLeadingZeros(result);
+}
+
+// 문자열 숫자 두 개를 빼는 함수 (num1 - num2, num1이 num2보다 크거나 같다고 가정)
+string subtract(string num1, string num2) {
+    string result = "";
+    int borrow = 0; // 빌림수
+    int i = num1.length() - 1;
+    int j = num2.length() - 1;
+
+    while (i >= 0 || j >= 0) {
+        int diff = borrow;
+        if (i >= 0) {
+            diff += num1[i--] - '0';
+        }
+        if (j >= 0) {
+            diff -= num2[j--] - '0';
+        }
+
+        if (diff < 0) {
+            diff += 10;
+            borrow = -1;
+        } else {
+            borrow = 0;
+        }
+        result.push_back(diff + '0');
+    }
+    reverse(result.begin(), result.end());
+    return removeLeadingZeros(result);
+}
+
+// 문자열 끝에 k개의 0을 추가하여 10^k를 곱하는 효과를 내는 함수
+string multiplyByPowerOf10(string s, int k) {
+    if (s == "0") return "0";
+    return s + string(k, '0');
+}
+
+// 문자열을 두 개의 절반으로 나누는 함수
+tuple<string, string> splitNumber(string s) {
+    int len = s.length();
+    int k = len / 2;
+    string front = s.substr(0, k);
+    string back = s.substr(k);
+    return make_tuple(front, back);
+}
+
+// 카라추바 알고리즘 (큰 수 곱셈)
+string karatsuba(string x, string y) {
+    // 기저 사례: 숫자가 작아지면 표준 곱셈 사용
+    if (x.length() <= 8 || y.length() <= 8) {
+        return to_string(stoll(x) * stoll(y));
+    }
+
+    // 두 수의 길이를 같게 맞추기
+    int len = max(x.length(), y.length());
+    if (len % 2 != 0) { // 길이가 홀수면 짝수로 맞춰줌
+        len++;
+    }
+
+    // 0을 채워 길이를 통일
+    string padded_x = string(len - x.length(), '0') + x;
+    string padded_y = string(len - y.length(), '0') + y;
+
+    int k = len / 2;
+    string a, b, c, d;
+    tie(a, b) = splitNumber(padded_x);
+    tie(c, d) = splitNumber(padded_y);
+
+    // 재귀 호출로 3번의 곱셈 수행
+    string ac = karatsuba(a, c);
+    string bd = karatsuba(b, d);
+    
+    string ab_sum = add(a, b);
+    string cd_sum = add(c, d);
+    string sum_prod = karatsuba(ab_sum, cd_sum);
+
+    // (ad + bc) 항 계산
+    string ad_plus_bc = subtract(subtract(sum_prod, ac), bd);
+
+    // 최종 결과 조합: ac * 10^(2k) + (ad+bc) * 10^k + bd
+    string term1 = multiplyByPowerOf10(ac, 2 * k);
+    string term2 = multiplyByPowerOf10(ad_plus_bc, k);
+
+    string result = add(add(term1, term2), bd);
+    
+    return removeLeadingZeros(result);
+}
+
+int main() {
+    string num1 = "123456789123456789";
+    string num2 = "987654321987654321";
+
+    cout << num1 << " * " << num2 << " = " << endl;
+    string result = karatsuba(num1, num2);
+    cout << result << endl;
+    
+    return 0;
+}
+
+*/
