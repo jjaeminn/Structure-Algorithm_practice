@@ -1,0 +1,93 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <tuple>
+
+// `std::`를 명시하여 vector가 std::vector임을 확실히 해야한다.
+using array = std::vector<int>;
+
+int find_max_one(array a) {
+    if (a.empty()) {
+        return -1;
+    }
+
+    int max_val = a[0];
+    for (size_t i = 1; i < a.size(); ++i) {
+        if (a[i] > max_val) {
+            max_val = a[i];
+        }
+    }
+    return max_val;
+}
+
+void bubble_sort(array& a) { // 매개변수를 참조(&)로 받아 원본 배열을 정렬
+    int n = a.size();
+    if (n <= 1) return;
+
+    for (int i = 0; i < n - 1; i++) {
+        // 내부 루프는 매번 정렬된 요소를 제외하고 반복 횟수를 줄입니다.
+        for (int j = 0; j < n - i - 1; j++) {
+            // 인접한 두 요소를 비교
+            if (a[j] > a[j + 1]) {
+                // 교환(swap)
+                std::swap(a[j], a[j + 1]);
+            }
+        }
+    }
+}
+
+// 분할(Partition) 함수: 피벗을 기준으로 배열을 두 부분으로 나눔
+int partition(array& a, int first, int last) {
+    int p = a[first]; // 피벗 선택 (보통 첫 번째 요소를 피벗으로 사용)
+    int left = first + 1;
+    int right = last;
+
+    while (left <= right) {
+        // left 포인터 이동: 피벗보다 작은 값은 left가 건너뜀
+        while (left <= last && a[left] <= p) { //a[left] <= p 이 조건이 불만족 한다면 
+            left++;
+        }
+        // right 포인터 이동: 피벗보다 큰 값은 right가 건너뜀
+        while (right >= first && a[right] > p) {
+            right--;
+        }
+
+        // left와 right가 엇갈리지 않았으면 두 값 교환
+        if (left < right) {
+            std::swap(a[left], a[right]);
+        }
+    }
+
+    // 최종적으로 피벗과 right가 가리키는 값을 교환
+    // right가 피벗보다 작은 값의 마지막 위치이므로, 피벗의 위치가 됨
+    std::swap(a[first], a[right]);
+    return right; // 피벗의 최종 위치를 반환
+}
+
+// 퀵 정렬(Quick Sort) 함수
+void quick_sort(array& a, int first, int last) {
+    if (first < last) { // 요소가 2개 이상일 때만 정렬
+        int pivot_index = partition(a, first, last); // 분할 실행
+
+        // 피벗을 기준으로 왼쪽 부분 배열 재귀 호출
+        quick_sort(a, first, pivot_index - 1);
+
+        // 피벗을 기준으로 오른쪽 부분 배열 재귀 호출
+        quick_sort(a, pivot_index + 1, last);
+    }
+}
+
+
+
+
+int main() {
+    array my_numbers = { 10, 5, 20, 15 };
+
+    int max_number = find_max_one(my_numbers);
+
+    // `using namespace std;`를 사용했기 때문에 `std::`를 생략할 수 있습니다.
+    std::cout << "가장 큰 값: " << max_number <<std:: endl;
+
+    return 0;
+}
