@@ -1,0 +1,54 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <tuple>
+
+
+
+using array = std::vector<int>;
+
+
+int heapify_down(array &a, int n, int parent) {
+	int large = parent;
+	int left = 2 * parent + 1;
+	int right = 2 * parent + 2;
+
+	if (left < n && a[left]>a[right]) {
+		large = left; // N이 왼쪽이 존재하고 오른쪽 갑 보다 크다면 
+	}
+
+	if (right<n && a[right]>a[left]) {
+		large = right; // N의 오른쪽이 존재하고 왼쪽 값보다 크면 
+	}
+
+	if (large != parent) { // large값이 곧 부모값이니까 안되면 계속 반복 
+		std::swap(a[parent], a[large]); // 기존 부모랑 large 변경 
+		heapify_down(a, n, large);
+	}
+  
+}
+
+void make_heap(array &a) {
+	int n = a.size();
+
+	for (int i = n / 2 - 1; i > 0; i--) { // 마지막 노드의 루트 노드부터 순회 
+		heapify_down(a, n, i);
+	}
+	
+
+}
+
+void delete_max(array& a,int n) {
+	std::swap(a[0], a[n - 1]);
+	n = n - 1;
+	heapify_down(a, n, 0);
+	a.pop_back();
+
+}
+
+
+int main() {
+  
+
+}
