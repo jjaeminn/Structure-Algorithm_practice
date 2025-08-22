@@ -1,0 +1,183 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <tuple>
+
+
+
+using array = std::vector<int>;
+
+
+long long fibonacci_iterative(int n) {
+	if (n < 0) {
+		return -1; // 유효하지 않은 입력
+	}
+	if (n == 0) {
+		return 0;
+	}
+	if (n == 1) {
+		return 1;
+	}
+
+	std::vector<long long> fib(n + 1);
+	fib[0] = 0;
+	fib[1] = 1;
+	for (int i = 2; i <= n; ++i) {
+		fib[i] = fib[i - 1] + fib[i - 2];
+	}
+
+	return fib[n];
+}
+
+int climb_stairs(int n) {
+	if (n <= 0) {
+		return 1; // 0개의 계단을 오르는 방법은 1가지(움직이지 않는 것)
+	}
+	if (n == 1) {
+		return 1;
+	}
+	std::vector<int> dp(n + 1);
+	dp[0] = 1; // 사례 설정
+	dp[1] = 1;
+	dp[2] = 2;
+
+	for (int i = 3; i <= n; ++i) {
+		dp[i] = dp[i - 1] + dp[i - 2];
+	}
+
+	return dp[n];
+}
+
+
+int prefix_sum_range(const std::vector<int>& arr, int i, int j) {
+	if (i > j || i < 0 || j >= arr.size()) {
+		return 0; 
+	}
+
+	std::vector<int> prefix_sum(arr.size());
+	prefix_sum[0] = arr[0];
+
+	for (size_t k = 1; k < arr.size(); ++k) {
+		prefix_sum[k] = prefix_sum[k - 1] + arr[k];
+	}
+
+	if (i == 0) {
+		return prefix_sum[j];
+	}
+	else {
+		return prefix_sum[j] - prefix_sum[i - 1];
+	}
+}
+
+int max_subarray_sum(const std::vector<int>& a, int l, int r) {
+	// 1. 기저 사례: 배열의 크기가 1인 경우
+	if (l == r) {
+		return a[l];
+	}
+
+	int m = l + (r - l) / 2;
+
+	// 2. 재귀 호출: 왼쪽, 오른쪽 부분 배열의 최대 합
+	int max_left_sum = max_subarray_sum(a, l, m);
+	int max_right_sum = max_subarray_sum(a, m + 1, r);
+
+	// 3. 교차 구간의 최대 합 계산
+	int cross_sum = 0;
+	int left_cross_sum = -2147483648; // int의 최소값
+	int sum = 0;
+	for (int i = m; i >= l; --i) {
+		sum += a[i];
+		left_cross_sum = std::max(left_cross_sum, sum);
+	}
+
+	int right_cross_sum = -2147483648;
+	sum = 0;
+	for (int i = m + 1; i <= r; ++i) {
+		sum += a[i];
+		right_cross_sum = std::max(right_cross_sum, sum);
+	}
+	cross_sum = left_cross_sum + right_cross_sum;
+
+	// 4. 세 가지 값 중 최댓값 반환
+	return std::max({ max_left_sum, max_right_sum, cross_sum });
+}
+
+
+int DP_prefix_sum(const std::vector<int>& arr, int i, int j) {
+	// 1. 입력 유효성 검사
+	if (i > j || i < 0 || j >= arr.size()) {
+		return 0;
+	}
+
+	
+	std::vector<int> prefix_sum(arr.size());
+	prefix_sum[0] = arr[0];
+
+	for (size_t k = 1; k < arr.size(); ++k) {
+		prefix_sum[k] = prefix_sum[k - 1] + arr[k];
+	}
+
+	// 4. 구간 합 계산
+	if (i == 0) {
+		return prefix_sum[j];
+	}
+	else {
+		return prefix_sum[j] - prefix_sum[i - 1];
+	}
+}
+
+std::string get_lcs_string(const std::string& x, const std::string& y) {
+	int m = x.length();
+	int n = y.length();
+
+	// 동적 프로그래밍을 위한 2차원 배열(dp 테이블) 생성 및 초기화
+	std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1, 0));
+
+	// dp 테이블 채우기
+	for (int i = 1; i <= m; ++i) {
+		for (int j = 1; j <= n; ++j) {
+			if (x[i - 1] == y[j - 1]) { // 같으면 
+				dp[i][j] = dp[i - 1][j - 1] + 1;//인덱스 각각 -1후 +1 
+			}
+			else {
+				dp[i][j] = std::max(dp[i - 1][j], dp[i][j - 1]); // 둘 중 큰 값을 넣기 
+			}
+		}
+	}
+
+	// dp 테이블을 사용하여 LCS 문자열 역추적
+	std::string lcs_str = "";
+	int i = m;
+	int j = n;
+
+	while (i > 0 && j > 0) {
+		// 현재 문자가 같은 경우
+		if (x[i - 1] == y[j - 1]) { // 같은 경우 문자열에 추가 
+			lcs_str += x[i - 1]; // LCS에 문자 추가
+			i--;
+			j--;
+		}
+		// 위쪽으로 이동 (dp[i-1][j]가 더 크거나 같은 경우)
+		else if (dp[i - 1][j] > dp[i][j - 1]) {
+			i--;
+		}
+		// 왼쪽으로 이동 (dp[i][j-1]가 더 큰 경우)
+		else {
+			j--;
+		}
+	}
+
+	// LCS 문자열은 역순으로 만들어졌으므로 뒤집기
+	std::reverse(lcs_str.begin(), lcs_str.end());
+
+	return lcs_str;
+}
+	
+
+
+int main() {
+  
+	return 0;
+
+}
