@@ -1,0 +1,80 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <climits>
+
+
+int zigzag(const std::vector<int>& a) {
+    int n = a.size();
+
+    if (n <= 1) {
+        return n;
+    }
+
+    std::vector<int> low(n, 1); 
+    std::vector<int> high(n, 1);
+
+    for (int i = 1; i < n; ++i)  // 1 -> 0, 2 ->0, 2->1 .. 어쨋든 high, low에는 최댓값이 들어간다. 
+        for (int j = 0; j < i; ++j) {
+            if (a[i] > a[j]) {
+                high[i] = std::max(high[i], low[j] + 1);
+            }
+            else if (a[i] < a[j]) {
+                low[i] = std::max(low[i], high[j] + 1);
+            }
+        }
+    int result = 0;
+    for (int i = 0; i < n; ++i) {
+        result = std::max({ result, low[i], high[i] });
+    }
+
+    return result;
+}
+
+
+
+
+int matrixChainMultiplication(const std::vector<int>& p) {
+ 
+    // e.g., for M1(10x20), M2(20x30), p = {10, 20, 30}
+    int n = p.size() - 1;
+
+ 
+    std::vector<std::vector<int>> dp(n, std::vector<int>(n, 0)); // 2차운 배열 다 0으로 초기화 
+
+  
+    for (int len = 2; len <= n; ++len) { // 2~n까지 순회 
+        for (int i = 0; i <= n - len; ++i) {
+            int j = i + len - 1;
+            dp[i][j] = INT_MAX;
+
+         
+            for (int k = i; k < j; ++k) {// i~j까지 곱하는데 드는 최소 곱셈 횟수 저장 
+                int cost = dp[i][k] + dp[k + 1][j] + p[i] * p[k + 1] * p[j + 1];// cost 계산 점화식 
+                if (cost < dp[i][j]) { // cost의 최솟값 도출 
+                    dp[i][j] = cost; // 최솟값 넣기 
+                }
+            }
+        }
+    }
+
+    return dp[0][n - 1];
+}
+
+
+int main() {
+    std::vector<int> a = { 1, 7, 4, 9, 2, 5 ,10,11,12,24,13,15};
+    std::cout << zigzag(a) << std::endl; // Output: 6
+
+   
+    std::vector<int> p = { 10, 20, 30, 40 };
+
+    int minCost = matrixChainMultiplication(p);
+    std::cout << minCost << std::endl;
+
+   
+    std::vector<int> p2 = { 40, 20, 30, 10 };
+    minCost = matrixChainMultiplication(p2);
+    std::cout<<minCost << std::endl;
+    return 0;
+}
