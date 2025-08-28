@@ -1,0 +1,78 @@
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <functional>
+#include <queue>
+
+// 가중치 무방향 그래프 인접 리스트 표현
+void addEdge_weighted(std::vector<std::vector<std::pair<int, int>>>& adj, int u, int v, int weight) {
+    adj[u].push_back({ v, weight });
+    adj[v].push_back({ u, weight });
+}
+
+// 프림 알고리즘 구현
+int Prim(const std::vector<std::vector<std::pair<int, int>>>& adj, int start_node) {
+    int num_vertices = adj.size();
+
+    // {가중치, 정점 번호}를 저장하는 최소 힙
+    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, std::greater<std::pair<int, int>>> min_heap;
+
+    // MST에 포함되었는지 여부 확인
+    std::vector<bool> inMST(num_vertices, false);
+
+    // MST에 포함된 엣지들을 저장할 벡터
+    std::vector<std::pair<int, int>> mst_edges;
+
+    // 현재까지의 MST 가중치 합
+    int total_weight = 0;
+
+    // 시작 정점과 가중치 0을 힙에 push
+    min_heap.push({ 0, start_node });
+
+    std::cout << "\n프림 알고리즘 과정:\n";
+
+    while (!min_heap.empty()) {
+        // 힙에서 가장 작은 가중치의 엣지 정보를 추출
+        int weight = min_heap.top().first;
+        int current_vertex = min_heap.top().second;
+        min_heap.pop(); // 힙에서 제거
+
+        // 이미 MST에 포함된 정점이면 건너뜀
+        if (inMST[current_vertex] == true) {
+            continue;
+        }
+
+        // 현재 정점을 MST에 추가하고 가중치를 더함
+        inMST[current_vertex] = true;
+        total_weight += weight;
+
+        // 시작 노드가 아닐 경우 MST에 엣지 추가
+        if (weight != 0) {
+            // MST에 추가된 엣지 정보를 저장 (현재 정점과 그 부모 노드는 별도 로직이 필요)
+            // 여기서는 단순화하여 MST에 포함된 정점과 그 가중치만 저장
+            // 실제 구현에서는 부모 노드 정보도 함께 저장해야 합니다.
+            mst_edges.push_back({ current_vertex, weight });
+        }
+
+        std::cout << "-> MST에 정점 '" << (char)('A' + current_vertex) << "' 추가 (가중치: " << weight << ")\n";
+
+        // 현재 정점의 인접 리스트를 순회하며 엣지 탐색
+        for (const auto& neighbor : adj[current_vertex]) {
+            int neighbor_vertex = neighbor.first;
+            int neighbor_weight = neighbor.second;
+
+            // 인접한 정점이 아직 MST에 포함되지 않았다면 힙에 추가
+            if (inMST[neighbor_vertex] == false) {
+                min_heap.push({ neighbor_weight, neighbor_vertex });
+            }
+        }
+    } // min_heap으로 인해 top으로 최소 정점 추출 -> 이미 한번 추출된거는 건너뜀, 뽑은 표시하고 가중치 더함 -> 인접리스트 탐색해서 작은 가중치 구함 -> 인접한거 다 min_heap에 넣음 
+
+    std::cout << "\nMST에 포함된 정점들:\n";
+    for (const auto& edge : mst_edges) {
+        // MST에 추가된 정점과 그 가중치를 출력
+        std::cout << "정점: " << (char)('A' + edge.first) << ", 가중치: " << edge.second << std::endl;
+    }
+
+    return total_weight;
+}
