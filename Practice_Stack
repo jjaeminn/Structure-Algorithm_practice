@@ -1,0 +1,90 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+
+#define STACK_BASE 10
+
+// push,pop,isempty, isfull, top
+
+class Stack {
+private:
+    int capacity;
+    int* arr;
+    int top;
+
+public:
+    // 생성자: 스택의 초기 크기를 설정하고 메모리를 할당합니다.
+    // initialSize가 0 이하이면 기본값 10으로 설정합니다.
+    Stack(int initialSize = STACK_BASE) {
+        if (initialSize <= 0) {
+            cout << "오류: 스택 크기는 0보다 커야 합니다. 기본값 10으로 설정합니다." << endl;
+            capacity = 10;
+        }
+
+        else {
+            capacity = initialSize;
+        }
+        arr = new int[capacity];
+        top = -1;
+    }
+
+    // 소멸자: 할당된 메모리를 해제합니다.
+    ~Stack() {
+        delete[] arr;
+        arr = nullptr;
+    }
+
+
+    bool Isfull() const { // 스택이 꽉 찼는지 확인 
+        return top == capacity - 1;
+    }
+
+
+    bool IsEmpty() const { // 스택이 비었는지 확인 
+        return top == -1;
+    }
+
+    void Push(int data) {
+        if (Isfull()) {
+            cout << "stack is full" << endl;
+        }
+        ++top;
+        arr[top] = data; // 거기다가 데이터를 넣어야한다.
+        cout << data << "를 스택에 넣었습니다." << "현재 인덱스 :"<< top << endl;
+    
+   }
+    void pop() {
+        if (IsEmpty()) {
+            cout << "뺄 값 X" << endl;
+        }
+        else{
+            cout << "delete" << arr[top] << endl;
+            top--; // 물리적으로 값을 삭제하는게 아닌 값을 가리키는걸 내려서 나중에 데이터를 재사용하는 방향으로 설계 1
+           
+        }
+
+    }
+
+    int Top() {
+        return arr[top];
+    }
+
+    void How_len() {
+        for (int i = 0; i < top;i++) {
+            cout << (arr + i) << endl;
+        }
+    }
+
+
+}; 
+int main() {
+    Stack s;
+
+    s.Push(30);
+    s.pop();
+
+
+	return 0;
+
+}
