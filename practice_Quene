@@ -1,0 +1,203 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+#define STACK_BASE 10
+
+// 원형큐 
+class RQ {
+private:
+    int capacity;
+    int* arr;
+    int last;
+    int fir;
+    int count; // 현재 큐에 있는 원소 개수
+
+public:
+    RQ(int initialSize = STACK_BASE) {
+        if (initialSize <= 0) {
+            cout << "오류: 큐 크기는 0보다 커야 합니다. 기본값 10으로 설정합니다." << endl;
+            capacity = 10;
+        }
+        else {
+            capacity = initialSize;
+        }
+
+        arr = new int[capacity];
+        // 배열 초기화
+        for (int i = 0; i < capacity; i++) {
+            arr[i] = 0;
+        }
+
+        fir = 0;    // 첫 번째 원소의 인덱스
+        last = 0;   // 마지막 원소 다음 인덱스
+        count = 0;  // 현재 원소 개수
+    }
+
+    // 소멸자
+    ~RQ() {
+        delete[] arr;
+        arr = nullptr;
+    }
+
+    bool Isfull() const {
+        return count == capacity;
+    }
+
+    bool IsEmpty() const {
+        return count == 0;
+    }
+
+    void enquene(int data) {
+        if (Isfull()) {
+            cout << "큐가 가득 찼습니다!" << endl;
+            return;
+        }
+
+        arr[last] = data;
+        cout << data << " 값이 들어갔습니다. 위치: " << last << endl;
+
+        last = (last + 1) % capacity;  // 원형 큐로 구현
+        count++;
+    }
+
+    void dequene() {
+        if (IsEmpty()) {
+            cout << "큐가 비어있습니다!" << endl;
+            return;
+        }
+
+        cout << arr[fir] << " 처리 완료" << endl;
+        arr[fir] = 0;  // 처리된 위치 초기화
+
+        fir = (fir + 1) % capacity;  // 원형 큐로 구현
+        count--;
+    }
+
+    void How() {
+        cout << "현재 큐 상태: ";
+        for (int i = 0; i < capacity; i++) {
+            if (i == fir && !IsEmpty()) cout << "[F]";
+            if (i == last) cout << "[L]";
+            cout << arr[i];
+            if (i < capacity - 1) cout << ", ";
+        }
+        cout << endl;
+        cout << "사용중인 원소 개수: " << count << "/" << capacity << endl;
+    }
+
+    // 큐에 있는 실제 데이터만 출력
+    void ShowData() {
+        if (IsEmpty()) {
+            cout << "큐가 비어있습니다." << endl;
+            return;
+        }
+
+        cout << "큐 데이터: ";
+        for (int i = 0; i < count; i++) {
+            int index = (fir + i) % capacity;
+            cout << arr[index];
+            if (i < count - 1) cout << " <- ";
+        }
+        cout << endl;
+    }
+};
+
+// 선형큐 
+class Q {
+private:
+    int capacity;
+    int* arr;
+    int last;
+    int fir;
+
+public:
+
+    Q(int initialSize = STACK_BASE) {
+        if (initialSize <= 0) {
+            cout << "오류: 스택 크기는 0보다 커야 합니다. 기본값 10으로 설정합니다." << endl;
+            capacity = 10;
+        }
+
+        else {
+            capacity = initialSize;
+        }
+        arr = new int[capacity];
+        for (int i = 0; i < capacity; i++) {
+            arr[i] = 0;
+        }
+        fir = -1;
+        last = -1;
+    }
+
+    // 소멸자: 할당된 메모리를 해제합니다.
+    ~Q() {
+        delete[] arr;
+        arr = nullptr;
+    }
+
+    bool Isfull() const { // 스택이 꽉 찼는지 확인 
+        return last == capacity - 1;
+    }
+
+    bool IsEmpty() const { // 스택이 비었는지 확인 
+        bool value = (fir == -1) && (last == -1);
+        return value;
+    }
+
+    void enquene(int data) {
+        if (Isfull()) {
+            cout << "Q is full" << endl;
+        }
+        if (IsEmpty()) {
+            fir++;
+            last++;
+            arr[fir] = data;
+            cout << arr[last] << "값이 들어갔습니다" << " 현재 인덱스 :" << last << endl;
+        }
+        else {
+            last++;
+            arr[last] = data;
+            cout << arr[last] << "값이 들어갔습니다" << " 현재 인덱스 :" << last << endl;
+        }
+
+    }
+
+    void dequene() {
+        if (IsEmpty()) {
+            cout << "뺄 값 X" << endl;
+        }
+        else {
+            cout << arr[fir] << "처리 완료" << endl;
+            for (int i = 0; i < last - 1; i++) {
+                arr[i] = arr[i + 1];
+            }
+            arr[last] = NULL;
+            last--;
+
+        }
+
+    }
+
+};
+
+    int main() {
+        Q q;
+        RQ rq;
+
+
+
+
+        q.enquene(10);
+        q.enquene(20);
+        q.enquene(30);
+        q.enquene(40);
+        q.enquene(50);
+
+        rq.dequene();
+        rq.enquene(10);
+
+
+
+        return 0;
+    }
