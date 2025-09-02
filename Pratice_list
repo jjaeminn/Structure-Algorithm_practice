@@ -1,0 +1,134 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+struct Node
+{
+    Node* next;
+    Node* prev;
+    int key;
+
+    Node(int val) :key(val), prev(nullptr), next(nullptr) {};
+};
+
+class List
+{
+private:
+    Node* head; // 가장 앞 머리 
+    Node* tail; // 가장 뒤 꼬리
+    int size; // 전체 리스트 크기
+    int index;
+
+
+
+public:
+    List() : head(nullptr), tail(nullptr), size(0){} // 변수 초기화 
+    ~List() { // 나중에 완료 후 지우는 작업 
+        Node* current = head; // 헤드부터 
+        if (current != nullptr) { // 끝까지 반복
+            Node* NewNode = current->next; // 이전으로 이동하면서 
+            delete current; // head값지우고 
+            current = NewNode; // current 업데이트로 옆으로 이동 
+        }
+        head = nullptr;
+        tail = nullptr;
+        size = 0;
+
+
+    }
+
+
+
+    bool Is_Empty() {
+        if (size == 0 && head == nullptr) {
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+    void pushdata(int data) {
+        Node* NewNode = new Node(data); // 집을 지어 놓고 
+
+        if (Is_Empty()) {
+            head = NewNode;// 첫 번쨰 집 주소를 head에 넣기 
+            tail = NewNode; // 마지막 주소를 tail에 넣기 -> 근데 newNode임 
+            size++;
+            //test code 
+            cout << size << "번째 리스트 생성" << endl;
+        }
+        else {
+            tail->next = NewNode; // 먼저 이동 
+            NewNode->prev = tail; // 양방향이므로 이어주고 
+            tail = NewNode; // tail 이름으로 덮어쓰기 
+            size++;
+            // test code
+            cout << size << "번째 리스트 생성" << endl;
+        }
+
+    }
+
+
+    int popfront() {
+        Node* popNode = head;
+        if (Is_Empty()) {
+            cout << "pop value isn't here" << endl;
+        }
+       
+        int popdata = popNode->key;
+        head = head->next;
+        head->prev = nullptr;
+        delete popNode;
+        size--;
+        cout << popdata << "를 뺏습니다." << endl;
+        return popdata;
+    }
+
+    int popback() {
+        Node* popNode = tail; // 가장 마지막 주소를 popNode에 놓고 
+        if (Is_Empty()) {
+            cout << "pop value isn't here" << endl;
+        }
+        int popdata = popNode->key; // 마지막 노드 키를 넣음 
+        tail = tail->prev; // tail의 이전 주소를 tail에 넣음
+        tail->next = nullptr; // tail의 다음 주소를 nullptr로 적용 
+        delete popNode; // popNode삭제 
+        size--;
+        cout << popdata << "를 뺏습니다." << endl;
+        return popdata;
+    }
+
+
+
+    void listup() {
+        Node* current = head;
+        cout << current->key << endl;
+        while (current != nullptr) { // 끝까지 순회 
+            Node* NewNode = current->next;
+            current = NewNode;
+            cout << current->key << endl;
+        }
+    }
+
+
+
+
+};
+    int main() {
+     
+        List l;
+
+        l.pushdata(20);
+        l.pushdata(50);
+        l.pushdata(10);
+        l.pushdata(60);
+        l.pushdata(70);
+        l.pushdata(90);
+        l.listup();
+
+
+
+
+        return 0;
+    }
