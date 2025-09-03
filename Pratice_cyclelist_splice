@@ -1,0 +1,171 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+struct Node
+{
+    Node* next;
+    Node* prev;
+    int key;
+
+    Node(int val) :key(val), prev(nullptr), next(nullptr) {};
+};
+
+class R_List
+{
+private:
+    Node* head; // 가장 앞 머리 
+    Node* tail; // 가장 뒤 꼬리
+    int size; // 전체 리스트 크기
+    int index;
+
+
+
+public:
+    R_List() : head(nullptr), tail(nullptr), size(0){} // 변수 초기화 
+    ~R_List() { // 나중에 완료 후 지우는 작업 
+        Node* current = head;
+        if (current != nullptr) {
+            Node* NewNode = current->next;
+            delete current;
+            current = NewNode;
+        }
+        head = nullptr;
+        tail = nullptr;
+        size = 0;
+
+
+    }
+
+
+
+    bool Is_Empty() {
+        if (size == 0 && head == nullptr) {
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+    void pushdata(int data) {
+        Node* NewNode = new Node(data); // 집을 지어 놓고 
+
+        if (Is_Empty()) {
+            head = NewNode;// 첫 번쨰 집 주소를 head에 넣기 
+            tail = NewNode; // 마지막 주소를 tail에 넣기 -> 근데 newNode임 
+            size++;
+            //test code 
+            cout << size << "번째 리스트 생성" << endl;
+        }
+        else {
+            tail->next = NewNode; // 먼저 이동 
+            NewNode->prev = tail; // 양방향이므로 이어주고 
+            tail = NewNode; // tail 이름으로 덮어쓰기 
+            tail->next = head; // 원 방향 리스트니까 연결하기 
+            head->prev = tail;
+            size++;
+            // test code
+            cout << size << "번째 리스트 생성" << endl;
+        }
+
+    }
+
+
+    int popfront() {
+        Node* popNode = head;
+        if (Is_Empty()) {
+            cout << "pop value isn't here" << endl;
+        }
+       
+        int popdata = popNode->key;
+        head = head->next;
+        head->prev = nullptr;
+        delete popNode;
+        size--;
+        cout << popdata << "를 뺏습니다." << endl;
+        return popdata;
+    }
+
+    int popback() {
+        Node* popNode = tail;
+        if (Is_Empty()) {
+            cout << "pop value isn't here" << endl;
+        }
+        int popdata = popNode->key;
+        tail = tail->prev;
+        tail->next = nullptr;
+        delete popNode;
+        size--;
+        cout << popdata << "를 뺏습니다." << endl;
+        return popdata;
+    }
+
+
+    void splice(Node* a, Node* b, Node* x) {
+
+        // a, b, x가 유효하지 않거나 리스트가 비어있으면 함수 종료
+        if (!a || !b || !x) {
+            return;
+        }
+
+        // a...b 부분 리스트를 원래 위치에서 분리
+        Node* a_prev = a->prev;
+        Node* b_next = b->next;
+
+        // a~~~b 부분 리스트를 감싸고 있던 노드들을 서로 연결
+        if (a_prev) {
+            a_prev->next = b_next;
+        }
+        if (b_next) {
+            b_next->prev = a_prev;
+        }
+
+        // 부분 리스트를 x 노드 뒤에 삽입
+        Node* x_next = x->next;
+
+        // x를 부분 리스트의 시작(a)에 연결
+        x->next = a;
+        a->prev = x;
+
+        // 부분 리스트의 끝(b)을 x 뒤에 있던 노드에 연결
+        b->next = x_next;
+        if (x_next) {
+            x_next->prev = b;
+        }
+    }
+
+    void listup() {
+        Node* current = head;
+        cout << current->key << endl;
+        while (current != nullptr) { // 끝까지 순회 
+            Node* NewNode = current->next;
+            current = NewNode;
+            cout << current->key << endl;
+        }
+    }
+
+
+    Node* find_node(int a) {
+        Node* current = head;
+        while (current != nullptr) { // 끝까지 순회 
+
+            if (current->key = a) { // key값이 일치하면 리턴 
+                return current;
+            }
+            Node* NewNode = current->next;
+            current = NewNode;
+        }
+    }
+
+
+
+
+};
+    int main() {
+     
+   
+
+
+        return 0;
+    }
